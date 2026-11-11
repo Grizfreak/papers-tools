@@ -16,7 +16,7 @@ ALLOWED_PAPER = {
 }
 ALLOWED_FAMILY = {"color", "label"}
 ALLOWED_KEYWORD = {"name", "color"}
-FORBIDDEN_PARTS = ("note", "pertinence", "path", "zotero", "lu_le", "abstract")
+FORBIDDEN_PARTS = ("note", "pertinence", "path", "zotero", "lu_le", "statut", "abstract")
 
 
 def _forbidden_keys(node, trail="racine"):

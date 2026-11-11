@@ -111,6 +111,7 @@ def paper(page):
         "keywords": get("Mots-clés") or [],
         "en_bref": get("En bref"),
         "citations": get("Citations"),
+        "statut": get("Statut"),
         "pertinence": get("Pertinence"),
         "lu_le": get("Lu le"),
         "mes_notes": get("Mes notes"),
@@ -126,9 +127,8 @@ def read_library(token):
     colors = list(dict.fromkeys(k["color"] for k in keywords))
     families = [{"color": c, "label": FAMILIES.get(c, c)} for c in colors]
 
-    # Le filtre dépend du type réel de la colonne Statut (select ou status)
-    status_type = schema["Statut"]["type"]
-    body = {"filter": {"property": "Statut", status_type: {"equals": "Lu"}}, "page_size": 100}
+    # Tous les statuts sont lus ; le tri entre public et local se fait dans main()
+    body = {"page_size": 100}
     pages = []
     while True:
         result = notion(token, "POST", f"data_sources/{DATA_SOURCE_ID}/query", body)
@@ -155,8 +155,10 @@ def main():
     families, keywords, papers = read_library(require("NOTION_TOKEN"))
     base = {"families": families, "keywords": keywords}
 
+    # Le site public ne montre que les papiers lus, réduits à la liste blanche
+    read = [p for p in papers if p["statut"] == "Lu"]
     public = {"version": "public", **base,
-              "papers": [{field: p[field] for field in PUBLIC_FIELDS} for p in papers]}
+              "papers": [{field: p[field] for field in PUBLIC_FIELDS} for p in read]}
     errors = check(public)
     if errors:
         raise SystemExit("public.json refusé :\n" + "\n".join(errors))
