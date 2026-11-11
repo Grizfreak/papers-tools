@@ -3,6 +3,8 @@
 Outils autour de ma bibliographie de thèse : un réseau interactif des papiers lus, alimenté
 par une base Notion, et un extracteur de figures.
 
+Version publique : <https://grizfreak.github.io/papers-tools/>
+
 ## Installation
 
 Python 3.13 suffit pour la synchro (aucune dépendance externe).
@@ -23,6 +25,13 @@ python scripts/check_public.py     # échoue si public.json sort de la liste bla
   comprises. Jamais commité.
 
 Le script ne fait que lire Notion, avec une intégration limitée à « Read content ».
+
+## Mise en ligne
+
+Le workflow `.github/workflows/sync.yml` tourne chaque jour à 5 h UTC, à chaque push et à la
+demande (`gh workflow run sync.yml`). Il régénère `public.json` avec le secret `NOTION_TOKEN`,
+vérifie la liste blanche, commite le fichier s'il a changé, puis déploie sur GitHub Pages les
+seuls fichiers du site.
 
 ## OpenAlex
 
