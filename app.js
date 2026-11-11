@@ -588,9 +588,11 @@ function related(paper) {
     .slice(0, 5);
 }
 
-// Les figures locales couvrent tous les papiers ; les publiques, les seuls papiers autorisés
+// Les figures n'existent qu'en local : le site public n'en demande et n'en affiche aucune
 async function loadFigureIndex() {
-  meta.figureBase = data.version === 'full' ? 'figures/' : 'figures-public/';
+  meta.figureBase = 'figures/';
+  meta.figures = {};
+  if (data.version !== 'full') return;
   try {
     const response = await fetch(`${meta.figureBase}index.json`, { cache: 'no-cache' });
     meta.figures = response.ok ? await response.json() : {};

@@ -4,6 +4,7 @@
 # Données privées : JSON complet (Mes notes, Pertinence) et figures sous licence
 data/full.json
 figures/
+figures-public/
 
 # Caches et environnements
 .cache/

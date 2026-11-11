@@ -57,7 +57,6 @@ jobs:
           cp index.html app.js style.css _site/
           cp -r vendor _site/
           cp data/public.json _site/data/
-          if [ -d figures-public ]; then cp -r figures-public _site/; fi
           python scripts/check_public.py _site/data/public.json
 
       - uses: actions/configure-pages@v6
