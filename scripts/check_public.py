@@ -12,11 +12,11 @@ ROOT = Path(__file__).resolve().parent.parent
 ALLOWED_TOP = {"version", "families", "keywords", "papers"}
 ALLOWED_PAPER = {
     "id", "label", "title", "authors", "year", "type", "publication",
-    "doi", "keywords", "en_bref", "citations",
+    "doi", "keywords", "citations",
 }
 ALLOWED_FAMILY = {"color", "label"}
 ALLOWED_KEYWORD = {"name", "color"}
-FORBIDDEN_PARTS = ("note", "pertinence", "path", "zotero", "lu_le", "statut", "abstract")
+FORBIDDEN_PARTS = ("note", "bref", "pertinence", "path", "zotero", "lu_le", "statut", "abstract")
 
 
 def _forbidden_keys(node, trail="racine"):

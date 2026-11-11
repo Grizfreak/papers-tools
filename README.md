@@ -20,9 +20,10 @@ python scripts/sync_notion.py      # écrit data/public.json et data/full.json
 python scripts/check_public.py     # échoue si public.json sort de la liste blanche
 ```
 
-- `data/public.json` : papiers lus, champs de la liste blanche uniquement. Commité.
+- `data/public.json` : papiers lus, métadonnées bibliographiques et mots-clés uniquement
+  (liste blanche). Commité.
 - `data/full.json` : tous les papiers (lus ou non) et tous les champs, notes personnelles
-  comprises. Jamais commité.
+  et textes personnels compris (En bref, Mes notes, Pertinence). Jamais commité.
 
 Le script ne fait que lire Notion, avec une intégration limitée à « Read content ».
 

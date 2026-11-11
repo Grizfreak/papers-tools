@@ -28,7 +28,7 @@ FAMILIES = {
 
 PUBLIC_FIELDS = (
     "id", "label", "title", "authors", "year", "type", "publication",
-    "doi", "keywords", "en_bref", "citations",
+    "doi", "keywords", "citations",
 )
 
 
