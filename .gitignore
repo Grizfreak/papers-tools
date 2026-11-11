@@ -1,0 +1,12 @@
+# Secrets
+.env
+
+# Données privées : JSON complet (Mes notes, Pertinence) et figures sous licence
+data/full.json
+figures/
+
+# Caches et environnements
+.cache/
+.venv/
+__pycache__/
+*.pyc
