@@ -10,14 +10,24 @@
   <header class="bar">
     <h1>Réseau des lectures</h1>
     <span id="badge" class="badge" hidden>version locale</span>
+    <div class="views" role="group" aria-label="Vue">
+      <button type="button" data-view="graph" aria-pressed="true">Graphe</button>
+      <button type="button" data-view="timeline" aria-pressed="false">Chronologie</button>
+      <button type="button" data-view="list" aria-pressed="false">Liste</button>
+    </div>
     <span id="count" class="count"></span>
     <input id="search" type="search" placeholder="Rechercher un titre, un auteur…" aria-label="Rechercher">
     <button id="toggle-filters" type="button" aria-expanded="false" aria-controls="filters">Filtres</button>
     <button id="relayout" type="button" title="Recalculer la disposition des nœuds visibles">Réorganiser</button>
+    <button id="export" type="button" title="Enregistrer la vue (image PNG, ou tableau CSV en vue Liste)">Exporter</button>
   </header>
 
   <div class="main">
     <aside id="filters" class="filters" aria-label="Filtres">
+      <section>
+        <h2>Couleur des papiers</h2>
+        <select id="color-by" aria-label="Couleur des papiers"></select>
+      </section>
       <section>
         <h2>Années</h2>
         <div class="years">
@@ -26,6 +36,17 @@
           <output id="year-out"></output>
         </div>
       </section>
+      <section>
+        <h2>Citations</h2>
+        <select id="min-citations" aria-label="Nombre minimal de citations">
+          <option value="0">toutes</option>
+          <option value="10">au moins 10</option>
+          <option value="50">au moins 50</option>
+          <option value="100">au moins 100</option>
+          <option value="500">au moins 500</option>
+        </select>
+      </section>
+      <div id="facets"></div>
       <section>
         <h2>Mots-clés</h2>
         <div class="mode" role="group" aria-label="Combinaison des mots-clés">
@@ -38,15 +59,21 @@
     </aside>
 
     <div class="stage">
-      <div id="graph" role="img" aria-label="Graphe des papiers lus et de leurs mots-clés"></div>
       <div id="isolation" class="isolation" hidden></div>
-      <div class="zoom" role="group" aria-label="Zoom">
-        <button id="zoom-in" type="button" title="Zoomer (+)" aria-label="Zoomer">+</button>
-        <button id="zoom-out" type="button" title="Dézoomer (-)" aria-label="Dézoomer">−</button>
-        <button id="zoom-fit" type="button" title="Tout afficher (0)" aria-label="Tout afficher">⤢</button>
+      <div class="canvas">
+        <div id="graph" role="img" aria-label="Graphe des papiers et de leurs mots-clés"></div>
+        <div class="zoom" role="group" aria-label="Zoom">
+          <button id="zoom-in" type="button" title="Zoomer (+)" aria-label="Zoomer">+</button>
+          <button id="zoom-out" type="button" title="Dézoomer (-)" aria-label="Dézoomer">−</button>
+          <button id="zoom-fit" type="button" title="Tout afficher (0)" aria-label="Tout afficher">⤢</button>
+        </div>
+        <div id="legend" class="legend" aria-label="Légende">
+          <div id="legend-families" class="legend-row"></div>
+          <div id="legend-papers" class="legend-row"></div>
+        </div>
+        <div id="list" class="list" hidden></div>
+        <p id="message" class="message" hidden></p>
       </div>
-      <div id="legend" class="legend" aria-label="Légende"></div>
-      <p id="message" class="message" hidden></p>
     </div>
 
     <aside id="panel" class="panel" aria-label="Détails" hidden>

@@ -17,6 +17,17 @@
   --fam-pink: #b0457f;
   --fam-red: #b8443d;
   --fam-default: #6b6f76;
+  /* Couleur des papiers : dégradé par année, catégories par type, paliers de pertinence */
+  --seq-lo: #c9e6e3;
+  --seq-hi: #0a5a5e;
+  --cat-1: #0f7b80;
+  --cat-2: #b0457f;
+  --cat-3: #94700c;
+  --cat-4: #b8443d;
+  --cat-5: #55606e;
+  --ord-1: #edc4da;
+  --ord-2: #cf6fa5;
+  --ord-3: #8f1f5c;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -28,6 +39,16 @@
     --line: #373737;
     --paper: #cfcec9;
     --accent: #6ba6e6;
+    --seq-lo: #1f4a4c;
+    --seq-hi: #8fe3dc;
+    --cat-1: #3fb5ba;
+    --cat-2: #e07ab0;
+    --cat-3: #d1a62e;
+    --cat-4: #e8776f;
+    --cat-5: #9aa5b3;
+    --ord-1: #5a2743;
+    --ord-2: #b0558a;
+    --ord-3: #f09cc9;
   }
 }
 
@@ -50,9 +71,9 @@ body {
   font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-button, input { font: inherit; color: inherit; }
+button, input, select { font: inherit; color: inherit; }
 
-button {
+button, select {
   padding: 4px 10px;
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -61,6 +82,12 @@ button {
 }
 
 button:hover { background: var(--surface); }
+
+button:disabled {
+  color: var(--muted);
+  cursor: default;
+  opacity: .6;
+}
 
 :focus-visible {
   outline: 2px solid var(--accent);
@@ -96,10 +123,27 @@ button:hover { background: var(--surface); }
   font-size: 12px;
 }
 
+/* Onglets de vue, collés en un seul bloc */
+.views { display: flex; }
+
+.views button { border-radius: 0; }
+
+.views button + button { border-left: 0; }
+
+.views button:first-child { border-radius: 6px 0 0 6px; }
+
+.views button:last-child { border-radius: 0 6px 6px 0; }
+
+.views button[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
+
 #search {
   flex: 1 1 160px;
   min-width: 0;
-  max-width: 320px;
+  max-width: 300px;
   margin-left: auto;
   padding: 4px 8px;
   border: 1px solid var(--line);
@@ -116,9 +160,17 @@ button:hover { background: var(--surface); }
 }
 
 .stage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.canvas {
   position: relative;
   flex: 1;
-  min-width: 0;
+  min-height: 0;
 }
 
 #graph {
@@ -147,7 +199,7 @@ button:hover { background: var(--surface); }
 }
 
 .filters h2, .panel h3 {
-  margin: 12px 0 6px;
+  margin: 14px 0 6px;
   color: var(--muted);
   font-size: 11px;
   font-weight: 600;
@@ -155,7 +207,9 @@ button:hover { background: var(--surface); }
   text-transform: uppercase;
 }
 
-.filters section:first-child h2 { margin-top: 0; }
+.filters > section:first-child h2 { margin-top: 0; }
+
+.filters select { width: 100%; }
 
 .years input { width: 100%; margin: 0; }
 
@@ -163,6 +217,25 @@ button:hover { background: var(--surface); }
   display: block;
   color: var(--muted);
   font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.checks {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
+
+.checks label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.checks small {
+  margin-left: auto;
+  color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 
@@ -227,24 +300,17 @@ button:hover { background: var(--surface); }
   line-height: 1;
 }
 
-/* Bandeau affiché tant qu'un mot-clé est isolé */
+/* Bandeau affiché tant qu'un nœud est isolé, au-dessus de toutes les vues */
 .isolation {
-  position: absolute;
-  top: 8px;
-  left: 8px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px 10px;
-  max-width: calc(100% - 60px);
-  padding: 5px 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--bg);
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
   font-size: 12px;
 }
-
-.isolation[hidden] { display: none; }
 
 .isolation label {
   display: inline-flex;
@@ -252,20 +318,26 @@ button:hover { background: var(--surface); }
   gap: 4px;
 }
 
-/* Légende, cliquable pour masquer une famille */
+.isolation select, .isolation button { padding: 1px 6px; }
+
+/* Légende : les familles sont cliquables pour les masquer */
 .legend {
   position: absolute;
   left: 8px;
   bottom: 8px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px 4px;
   max-width: calc(100% - 16px);
-  padding: 5px 6px;
+  padding: 4px 6px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: color-mix(in srgb, var(--bg) 90%, transparent);
   font-size: 11px;
+}
+
+.legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 4px;
 }
 
 .legend button {
@@ -302,8 +374,82 @@ button:hover { background: var(--surface); }
 .dot {
   width: 9px;
   height: 9px;
+  border: 1px solid var(--paper);
   border-radius: 50%;
   background: var(--paper);
+}
+
+.dot.unread {
+  border-style: dashed;
+  background: transparent;
+}
+
+.gradient {
+  width: 70px;
+  height: 9px;
+  border-radius: 3px;
+  background: linear-gradient(to right, var(--seq-lo), var(--seq-hi));
+}
+
+/* Vue liste : recouvre le graphe, qui reste monté derrière */
+.list {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  overflow: auto;
+  background: var(--bg);
+}
+
+.list table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.list th {
+  position: sticky;
+  top: 0;
+  padding: 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
+  text-align: left;
+}
+
+.list th button {
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-weight: 600;
+  text-align: inherit;
+  white-space: nowrap;
+}
+
+.list td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.list .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.list tbody tr { cursor: pointer; }
+
+.list tbody tr:hover, .list tbody tr.current { background: var(--surface); }
+
+.list td small {
+  display: block;
+  color: var(--muted);
+}
+
+.list .empty {
+  padding: 24px;
+  color: var(--muted);
+  text-align: center;
 }
 
 /* Panneau de détails */
@@ -316,8 +462,6 @@ button:hover { background: var(--surface); }
   background: var(--bg);
   overflow-wrap: anywhere;
 }
-
-.panel[hidden] { display: none; }
 
 .close {
   position: absolute;
@@ -346,6 +490,15 @@ button:hover { background: var(--surface); }
 
 .panel a { color: var(--accent); }
 
+.panel .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.panel .actions button { font-size: 13px; }
+
 .panel .private {
   margin-top: 12px;
   padding-top: 2px;
@@ -372,17 +525,16 @@ button:hover { background: var(--surface); }
   color: var(--muted);
 }
 
-/* Petit écran ou iframe étroite : les volets passent par-dessus le graphe */
+/* Petit écran ou iframe étroite : filtres par-dessus, panneau sous le graphe */
 @media (max-width: 900px) {
   .filters {
     position: absolute;
     inset: 0 auto 0 0;
-    z-index: 3;
+    z-index: 5;
     width: min(280px, 86%);
     box-shadow: 4px 0 16px rgb(0 0 0 / .18);
   }
 
-  /* Le panneau se range sous le graphe, qui garde ainsi toute sa zone visible */
   .main { flex-direction: column; }
 
   .panel {
@@ -393,7 +545,7 @@ button:hover { background: var(--surface); }
     border-left: 0;
   }
 
-  .count { display: none; }
+  .count, .list .wide { display: none; }
 }
 
 .filters.closed { display: none; }

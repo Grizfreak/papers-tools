@@ -19,7 +19,8 @@ python scripts/check_public.py     # échoue si public.json sort de la liste bla
 ```
 
 - `data/public.json` : papiers lus, champs de la liste blanche uniquement. Commité.
-- `data/full.json` : tous les champs, notes personnelles comprises. Jamais commité.
+- `data/full.json` : tous les papiers (lus ou non) et tous les champs, notes personnelles
+  comprises. Jamais commité.
 
 Le script ne fait que lire Notion, avec une intégration limitée à « Read content ».
 
@@ -45,6 +46,12 @@ scripts\install_shortcut.ps1      # raccourci sur le bureau et dans le menu Dém
 
 Le site charge `data/full.json` s'il existe (version locale, avec les notes), sinon
 `data/public.json`. Ajouter `?data=public` à l'adresse force la version publique.
+
+- Trois vues : Graphe, Chronologie (une colonne par année) et Liste (tableau triable).
+- Double-clic sur un mot-clé ou un papier pour l'isoler ; clic pour ouvrir ses détails.
+- Filtres : années, citations, type, mots-clés, recherche ; en local, pertinence et statut.
+- Exporter : la vue en PNG, ou le tableau en CSV depuis la vue Liste.
+- L'adresse retient la vue, la couleur, le nœud isolé et le nœud ouvert.
 
 ## Extracteur de figures
 
