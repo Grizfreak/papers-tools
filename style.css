@@ -33,6 +33,9 @@
 
 * { box-sizing: border-box; }
 
+/* Un élément caché le reste, même si une règle plus bas lui donne un display */
+[hidden] { display: none !important; }
+
 html, body {
   height: 100%;
   margin: 0;

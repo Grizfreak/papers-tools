@@ -35,9 +35,7 @@ if (-not $NoSync) {
     }
 }
 
-# Le serveur n'écoute que sur cette machine : data/full.json reste privé
-$server = Start-Process python -ArgumentList '-m', 'http.server', $Port, '--bind', '127.0.0.1' `
-    -NoNewWindow -PassThru
+$server = Start-Process python -ArgumentList 'scripts/serve.py', $Port -NoNewWindow -PassThru
 try {
     foreach ($try in 1..50) {
         if (Test-Port) { break }

@@ -133,12 +133,18 @@ function seeded(seed, run) {
   try { run(); } finally { Math.random = original; }
 }
 
+// Nœuds affichés et liens entre eux, d'après la classe posée par les filtres
+function shown() {
+  const nodes = cy.nodes().not('.hidden');
+  return nodes.union(nodes.edgesWith(nodes));
+}
+
 function layout() {
   // La disposition épouse les proportions de la zone d'affichage, mesurée à l'instant
   cy.resize();
   const ratio = Math.min(2, Math.max(0.6, cy.width() / Math.max(1, cy.height())));
   seeded(7, () => {
-    cy.elements(':visible').layout({
+    shown().layout({
       name: 'cose',
       animate: false,
       boundingBox: { x1: 0, y1: 0, w: 1100 * ratio, h: 1100 },
@@ -151,7 +157,7 @@ function layout() {
       nodeDimensionsIncludeLabels: true,
     }).run();
   });
-  cy.fit(cy.elements(':visible'), 50);
+  cy.fit(shown(), 50);
 }
 
 // Surligne un nœud et ses voisins ; sans argument, revient à la sélection en cours
@@ -437,14 +443,14 @@ async function main() {
   $('toggle-filters').addEventListener('click', () => setFilters($('filters').classList.contains('closed')));
   $('zoom-in').addEventListener('click', () => zoomBy(1.3));
   $('zoom-out').addEventListener('click', () => zoomBy(1 / 1.3));
-  $('zoom-fit').addEventListener('click', () => cy.fit(cy.elements(':visible'), 30));
+  $('zoom-fit').addEventListener('click', () => cy.fit(shown(), 50));
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') select(null);
     // Les raccourcis de zoom ne doivent pas gêner la saisie dans la recherche
-    if (event.target.matches('input')) return;
+    if (event.target.tagName === 'INPUT') return;
     if (event.key === '+' || event.key === '=') zoomBy(1.3);
     if (event.key === '-') zoomBy(1 / 1.3);
-    if (event.key === '0') cy.fit(cy.elements(':visible'), 30);
+    if (event.key === '0') cy.fit(shown(), 50);
   });
 
   setFilters(!narrow.matches);
