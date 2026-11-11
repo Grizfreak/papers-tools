@@ -77,5 +77,7 @@ python scripts/extract_figures.py --all                   # tous les PDF, sans r
 
 Chaque légende « Fig. X » ou « Table X » donne une image `fig-0X.png` ou `table-0X.png` et une
 entrée dans `captions.json`. La zone de la page est rendue telle quelle, schémas vectoriels
-compris. `figures/` reste local et n'est jamais commité : seul le site local affiche ces images,
+compris. Les PDF sont cherchés au chemin noté dans Notion, sinon par leur clé dans le stockage
+Zotero de la machine (`~/Zotero/storage`, ou le dossier donné par `ZOTERO_STORAGE` dans `.env`).
+`figures/` reste local et n'est jamais commité : seul le site local affiche ces images,
 dans le panneau d'un papier. Le site public n'en montre aucune.

@@ -10,14 +10,16 @@ La zone de la page est rendue telle quelle : les schémas vectoriels sont donc i
 """
 import argparse
 import json
+import os
 import re
 import sys
 from collections import Counter
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 import pymupdf
 
-ROOT = Path(__file__).resolve().parent.parent
+from env import ROOT, load_env
+
 FIGURES = ROOT / "figures"
 
 CAPTION = re.compile(r"^\s*(fig(?:ure)?s?\.?|table|tab\.)\s*(\d+|[ivxl]+)\b\s*([.:|—–-])?", re.IGNORECASE)
@@ -340,14 +342,31 @@ def extract(pdf, out, dpi=200):
     return items, missed
 
 
+def local_pdf(file_path):
+    """Chemin du PDF sur cette machine : celui noté dans Notion, sinon le stockage Zotero local."""
+    if Path(file_path).exists():
+        return Path(file_path)
+    # Notion garde le chemin de l'ordi d'origine ; seuls <clé>/<fichier> valent partout
+    parts = PureWindowsPath(file_path).parts
+    load_env()
+    storage = Path(os.environ.get("ZOTERO_STORAGE") or Path.home() / "Zotero" / "storage")
+    candidate = storage / parts[-2] / parts[-1] if len(parts) >= 2 else None
+    return candidate if candidate and candidate.exists() else None
+
+
 def library():
     """Papiers de la Bibliothèque qui ont un PDF local, d'après data/full.json."""
     path = ROOT / "data" / "full.json"
     if not path.exists():
         raise SystemExit("data/full.json absent : lance d'abord python scripts/sync_notion.py")
-    papers = json.loads(path.read_text(encoding="utf-8"))["papers"]
-    return [p for p in papers if p["file_path"] and p["file_path"].lower().endswith(".pdf")
-            and Path(p["file_path"]).exists()]
+    found = []
+    for paper in json.loads(path.read_text(encoding="utf-8"))["papers"]:
+        if not (paper["file_path"] or "").lower().endswith(".pdf"):
+            continue
+        pdf = local_pdf(paper["file_path"])
+        if pdf:
+            found.append({**paper, "file_path": str(pdf)})
+    return found
 
 
 def main():
