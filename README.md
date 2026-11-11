@@ -65,4 +65,20 @@ Le site charge `data/full.json` s'il existe (version locale, avec les notes), si
 
 ## Extracteur de figures
 
-À venir.
+```powershell
+python -m pip install -r requirements.txt                 # PyMuPDF, une seule fois
+python scripts/extract_figures.py article.pdf --out dossier   # un PDF quelconque (slides)
+python scripts/extract_figures.py --key 764PHHFY          # un papier de la Bibliothèque
+python scripts/extract_figures.py --all                   # tous les PDF, sans refaire l'existant
+```
+
+Chaque légende « Fig. X » ou « Table X » donne une image `fig-0X.png` ou `table-0X.png` et une
+entrée dans `captions.json`. La zone de la page est rendue telle quelle, schémas vectoriels
+compris. `figures/` reste local : le site local affiche ces images dans le panneau d'un papier.
+
+```powershell
+python scripts/publish_figures.py            # liste les papiers en accès ouvert sous licence CC
+python scripts/publish_figures.py --apply    # copie leurs figures dans figures-public/
+```
+
+Seul `figures-public/` peut être commité ; chaque figure y porte sa source et sa licence.
