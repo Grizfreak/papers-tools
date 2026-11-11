@@ -1,0 +1,69 @@
+name: Synchro Notion et déploiement
+
+on:
+  schedule:
+    # Tous les jours à 5 h UTC
+    - cron: "0 5 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  sync-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Régénérer public.json depuis Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: python scripts/sync_notion.py --public-only
+
+      - name: Vérifier la liste blanche
+        run: python scripts/check_public.py
+
+      - name: Commiter public.json s'il a changé
+        run: |
+          if git diff --quiet -- data/public.json; then
+            echo "Aucun changement."
+          else
+            git config user.name "Grizfreak"
+            git config user.email "36886471+Grizfreak@users.noreply.github.com"
+            git add data/public.json
+            git commit -m "chore: met à jour public.json depuis Notion"
+            git push
+          fi
+
+      # Seuls les fichiers du site partent en ligne, pas les scripts
+      - name: Assembler le site
+        run: |
+          mkdir -p _site/data
+          cp index.html app.js style.css _site/
+          cp -r vendor _site/
+          cp data/public.json _site/data/
+          python scripts/check_public.py _site/data/public.json
+
+      - uses: actions/configure-pages@v6
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v5
