@@ -1,0 +1,2 @@
+# Seul l'extracteur de figures a une dépendance ; la synchro n'utilise que la bibliothèque standard
+pymupdf>=1.24
