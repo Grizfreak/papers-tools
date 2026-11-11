@@ -20,6 +20,7 @@
     <button id="toggle-filters" type="button" aria-expanded="false" aria-controls="filters">Filtres</button>
     <button id="relayout" type="button" title="Recalculer la disposition des nœuds visibles">Réorganiser</button>
     <button id="export" type="button" title="Enregistrer la vue (image PNG, ou tableau CSV en vue Liste)">Exporter</button>
+    <a id="open-full" class="open-full" target="_blank" rel="noopener" title="Ouvrir le site complet dans un nouvel onglet" hidden>Plein écran ↗</a>
   </header>
 
   <div class="main">
@@ -67,6 +68,7 @@
           <button id="zoom-out" type="button" title="Dézoomer (-)" aria-label="Dézoomer">−</button>
           <button id="zoom-fit" type="button" title="Tout afficher (0)" aria-label="Tout afficher">⤢</button>
         </div>
+        <button id="legend-toggle" class="legend-toggle" type="button" aria-expanded="false" aria-controls="legend" hidden>Légende</button>
         <div id="legend" class="legend" aria-label="Légende">
           <div id="legend-families" class="legend-row"></div>
           <div id="legend-papers" class="legend-row"></div>

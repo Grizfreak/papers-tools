@@ -62,6 +62,9 @@ Le site charge `data/full.json` s'il existe (version locale, avec les notes), si
 - Filtres : années, citations, type, mots-clés, recherche ; en local, pertinence et statut.
 - Exporter : la vue en PNG, ou le tableau en CSV depuis la vue Liste.
 - L'adresse retient la vue, la couleur, le nœud isolé et le nœud ouvert.
+- Embarqué dans une autre page (bloc `/embed` de Notion), le site passe en mode compact :
+  en-tête sur une ligne, légende repliée, lien « Plein écran ». `?embed=1` ou `?embed=0` le
+  force ou l'empêche.
 
 ## Extracteur de figures
 

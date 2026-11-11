@@ -612,3 +612,33 @@ button:disabled {
 }
 
 .filters.closed { display: none; }
+
+/* Mode compact, quand le site est embarqué dans une autre page : l'essentiel sur une ligne */
+.open-full {
+  color: var(--accent);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.legend-toggle {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+.compact .bar { padding: 6px 8px; }
+
+.compact .bar h1, .compact .badge, .compact .count, .compact #relayout, .compact #export { display: none; }
+
+.compact #search { margin-left: 0; }
+
+.compact .legend { bottom: 40px; }
+
+.compact .legend:not(.open) { display: none; }
+
+.compact .zoom button {
+  width: 28px;
+  height: 28px;
+}

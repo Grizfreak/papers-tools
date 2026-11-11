@@ -230,11 +230,13 @@ function shown() {
 function forceLayout() {
   // La disposition épouse les proportions de la zone d'affichage
   const ratio = Math.min(2, Math.max(0.6, cy.width() / Math.max(1, cy.height())));
+  // En mode compact, une disposition plus serrée garde des libellés lisibles dans un petit cadre
+  const side = meta.compact ? 760 : 1100;
   seeded(7, () => {
     shown().layout({
       name: 'cose',
       animate: false,
-      boundingBox: { x1: 0, y1: 0, w: 1100 * ratio, h: 1100 },
+      boundingBox: { x1: 0, y1: 0, w: side * ratio, h: side },
       nodeRepulsion: () => 600000,
       nodeOverlap: 40,
       idealEdgeLength: () => 110,
@@ -286,6 +288,12 @@ function timelineLayout() {
   });
 }
 
+// Recadre sur ce qui est affiché ; tant que l'utilisateur n'a pas bougé la vue, elle suit la taille
+function fitView() {
+  cy.fit(shown(), meta.compact ? 24 : 50);
+  meta.moved = false;
+}
+
 function layout() {
   if (state.view === 'list') return;
   cy.resize();
@@ -294,7 +302,7 @@ function layout() {
   else forceLayout();
   // Disposition calculée sur un sous-ensemble : à refaire en quittant l'isolement du papier
   meta.partial = Boolean(state.isolated && state.isolated.startsWith('p:'));
-  cy.fit(shown(), 50);
+  fitView();
 }
 
 // Surligne un nœud et ses voisins ; sans argument, revient à la sélection en cours
@@ -444,6 +452,7 @@ function isolate(id) {
 }
 
 function zoomBy(factor) {
+  meta.moved = true;
   cy.zoom({ level: cy.zoom() * factor, renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } });
 }
 
@@ -839,6 +848,25 @@ function setView(view) {
   syncUrl();
 }
 
+// Mode compact : automatique dans une iframe, ou forcé par ?embed=1 (et ?embed=0 pour l'éviter)
+function setCompact() {
+  const wanted = new URLSearchParams(location.search).get('embed');
+  meta.compact = wanted ? wanted !== '0' : window.self !== window.top;
+  document.body.classList.toggle('compact', meta.compact);
+  $('open-full').hidden = !meta.compact;
+  $('legend-toggle').hidden = !meta.compact;
+  $('open-full').addEventListener('click', () => {
+    // Le lien reprend l'état courant (vue, nœud ouvert), sans le mode compact
+    const url = new URL(location.href);
+    url.searchParams.set('embed', '0');
+    $('open-full').href = url.href;
+  });
+  $('legend-toggle').addEventListener('click', () => {
+    const open = $('legend').classList.toggle('open');
+    $('legend-toggle').setAttribute('aria-expanded', String(open));
+  });
+}
+
 function setFilters(open) {
   $('filters').classList.toggle('closed', !open);
   $('toggle-filters').setAttribute('aria-expanded', String(open));
@@ -853,6 +881,7 @@ async function main() {
     return;
   }
   prepare();
+  setCompact();
   await loadFigureIndex();
   $('badge').hidden = data.version !== 'full';
 
@@ -882,7 +911,7 @@ async function main() {
   $('toggle-filters').addEventListener('click', () => setFilters($('filters').classList.contains('closed')));
   $('zoom-in').addEventListener('click', () => zoomBy(1.3));
   $('zoom-out').addEventListener('click', () => zoomBy(1 / 1.3));
-  $('zoom-fit').addEventListener('click', () => cy.fit(shown(), 50));
+  $('zoom-fit').addEventListener('click', fitView);
   document.querySelectorAll('.views button').forEach((button) => {
     button.addEventListener('click', () => setView(button.dataset.view));
   });
@@ -902,13 +931,20 @@ async function main() {
     if (['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)) return;
     if (event.key === '+' || event.key === '=') zoomBy(1.3);
     if (event.key === '-') zoomBy(1 / 1.3);
-    if (event.key === '0') cy.fit(shown(), 50);
+    if (event.key === '0') fitView();
   });
 
   setFilters(!narrow.matches);
   narrow.addEventListener('change', () => setFilters(!narrow.matches));
   dark.addEventListener('change', () => cy.style(graphStyle()));
+  // Une fenêtre redimensionnée (embed Notion) recadre le graphe, sauf si la vue a été déplacée
+  cy.on('scrollzoom pinchzoom dragpan', () => { meta.moved = true; });
   new ResizeObserver(() => cy.resize()).observe($('graph'));
+  let resizing;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizing);
+    resizing = setTimeout(() => { cy.resize(); if (!meta.moved && state.view !== 'list') fitView(); }, 150);
+  });
 
   // État de départ repris de l'adresse ; un mot-clé nu reste accepté (anciens liens)
   const params = new URLSearchParams(location.search);
