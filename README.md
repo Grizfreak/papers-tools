@@ -34,7 +34,17 @@ dans `.cache/`.
 
 ## Réseau des lectures
 
-À venir.
+Site statique à la racine (`index.html`, `app.js`, `style.css`), sans étape de build, avec
+Cytoscape.js 3.33.1 copié dans `vendor/`.
+
+```powershell
+scripts\serve.ps1                 # synchro Notion, puis http://127.0.0.1:8137/
+scripts\serve.ps1 -NoSync         # sans synchro
+scripts\install_shortcut.ps1      # raccourci sur le bureau et dans le menu Démarrer
+```
+
+Le site charge `data/full.json` s'il existe (version locale, avec les notes), sinon
+`data/public.json`. Ajouter `?data=public` à l'adresse force la version publique.
 
 ## Extracteur de figures
 

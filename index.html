@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Réseau des lectures</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="bar">
+    <h1>Réseau des lectures</h1>
+    <span id="badge" class="badge" hidden>version locale</span>
+    <span id="count" class="count"></span>
+    <input id="search" type="search" placeholder="Rechercher un titre, un auteur…" aria-label="Rechercher">
+    <button id="toggle-filters" type="button" aria-expanded="false" aria-controls="filters">Filtres</button>
+    <button id="relayout" type="button" title="Recalculer la disposition des nœuds visibles">Réorganiser</button>
+  </header>
+
+  <div class="main">
+    <aside id="filters" class="filters" aria-label="Filtres">
+      <section>
+        <h2>Années</h2>
+        <div class="years">
+          <input id="year-min" type="range" aria-label="Année minimale">
+          <input id="year-max" type="range" aria-label="Année maximale">
+          <output id="year-out"></output>
+        </div>
+      </section>
+      <section>
+        <h2>Mots-clés</h2>
+        <div class="mode" role="group" aria-label="Combinaison des mots-clés">
+          <label><input type="radio" name="mode" value="all" checked> tous</label>
+          <label><input type="radio" name="mode" value="any"> au moins un</label>
+          <button id="reset" type="button">Tout effacer</button>
+        </div>
+        <div id="keyword-groups"></div>
+      </section>
+    </aside>
+
+    <div class="stage">
+      <div id="graph" role="img" aria-label="Graphe des papiers lus et de leurs mots-clés"></div>
+      <div id="legend" class="legend" aria-label="Légende"></div>
+      <p id="message" class="message" hidden></p>
+    </div>
+
+    <aside id="panel" class="panel" aria-label="Détails" hidden>
+      <button id="close-panel" class="close" type="button" aria-label="Fermer">×</button>
+      <div id="panel-body"></div>
+    </aside>
+  </div>
+
+  <script src="vendor/cytoscape-3.33.1.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

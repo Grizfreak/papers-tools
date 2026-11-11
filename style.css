@@ -1,0 +1,353 @@
+:root {
+  --bg: #ffffff;
+  --surface: #f7f6f3;
+  --ink: #37352f;
+  --muted: #787774;
+  --line: #e3e2de;
+  --paper: #4a4843;
+  --accent: #2f6fb7;
+  /* Teintes des couleurs Notion, assez sombres pour porter du texte blanc */
+  --fam-blue: #2f6fb7;
+  --fam-green: #35805a;
+  --fam-purple: #7a58b0;
+  --fam-orange: #b05c12;
+  --fam-gray: #6b6f76;
+  --fam-brown: #8a5a3c;
+  --fam-yellow: #94700c;
+  --fam-pink: #b0457f;
+  --fam-red: #b8443d;
+  --fam-default: #6b6f76;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #191919;
+    --surface: #252525;
+    --ink: #e6e5e1;
+    --muted: #9b9a97;
+    --line: #373737;
+    --paper: #cfcec9;
+    --accent: #6ba6e6;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  background: var(--bg);
+  color: var(--ink);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+button, input { font: inherit; color: inherit; }
+
+button {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  cursor: pointer;
+}
+
+button:hover { background: var(--surface); }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Barre du haut */
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.bar h1 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.badge {
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: var(--fam-orange);
+  color: #fff;
+  font-size: 11px;
+}
+
+.count {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+#search {
+  flex: 1 1 160px;
+  min-width: 0;
+  max-width: 320px;
+  margin-left: auto;
+  padding: 4px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+/* Zone principale */
+.main {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+#graph {
+  position: absolute;
+  inset: 0;
+}
+
+.message {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 24px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* Filtres */
+.filters {
+  width: 250px;
+  padding: 10px 12px;
+  overflow-y: auto;
+  border-right: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.filters h2, .panel h3 {
+  margin: 12px 0 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.filters section:first-child h2 { margin-top: 0; }
+
+.years input { width: 100%; margin: 0; }
+
+.years output {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mode {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: 12px;
+}
+
+.mode button {
+  margin-left: auto;
+  padding: 1px 7px;
+  font-size: 12px;
+}
+
+.group-title {
+  margin: 10px 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Un mot-clé : contour de la couleur de sa famille, plein quand il est actif */
+.chip {
+  padding: 1px 8px;
+  border: 1px solid var(--chip);
+  border-radius: 11px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.chip:hover { background: color-mix(in srgb, var(--chip) 18%, transparent); }
+
+.chip[aria-pressed="true"], .chip.solid {
+  background: var(--chip);
+  color: #fff;
+}
+
+/* Légende, cliquable pour masquer une famille */
+.legend {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 4px;
+  max-width: calc(100% - 16px);
+  padding: 5px 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  font-size: 11px;
+}
+
+.legend button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 5px;
+  border: 0;
+  background: none;
+}
+
+.legend button[aria-pressed="false"] {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.legend button[aria-pressed="false"] .swatch { opacity: .3; }
+
+.legend .note {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 5px;
+  color: var(--muted);
+}
+
+.swatch {
+  width: 14px;
+  height: 9px;
+  border-radius: 3px;
+  background: var(--chip);
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--paper);
+}
+
+/* Panneau de détails */
+.panel {
+  position: relative;
+  width: 340px;
+  padding: 14px 16px;
+  overflow-y: auto;
+  border-left: 1px solid var(--line);
+  background: var(--bg);
+  overflow-wrap: anywhere;
+}
+
+.panel[hidden] { display: none; }
+
+.close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 0 8px;
+  border: 0;
+  font-size: 20px;
+  line-height: 28px;
+}
+
+.panel h2 {
+  margin: 0 28px 6px 0;
+  font-size: 16px;
+  line-height: 1.3;
+}
+
+.panel p { margin: 0 0 8px; }
+
+.panel .meta {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.panel .notes { white-space: pre-wrap; }
+
+.panel a { color: var(--accent); }
+
+.panel .private {
+  margin-top: 12px;
+  padding-top: 2px;
+  border-top: 1px dashed var(--line);
+}
+
+.paper-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.paper-list button {
+  display: block;
+  width: 100%;
+  padding: 5px 6px;
+  border: 0;
+  border-radius: 6px;
+  text-align: left;
+}
+
+.paper-list small {
+  display: block;
+  color: var(--muted);
+}
+
+/* Petit écran ou iframe étroite : les volets passent par-dessus le graphe */
+@media (max-width: 900px) {
+  .filters {
+    position: absolute;
+    inset: 0 auto 0 0;
+    z-index: 3;
+    width: min(280px, 86%);
+    box-shadow: 4px 0 16px rgb(0 0 0 / .18);
+  }
+
+  /* Le panneau se range sous le graphe, qui garde ainsi toute sa zone visible */
+  .main { flex-direction: column; }
+
+  .panel {
+    flex: 0 1 auto;
+    width: auto;
+    max-height: 55%;
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+
+  .count { display: none; }
+}
+
+.filters.closed { display: none; }
