@@ -82,6 +82,19 @@
     </aside>
   </div>
 
+  <dialog id="lightbox" class="lightbox" aria-label="Figure agrandie">
+    <div class="lightbox-bar">
+      <button id="figure-prev" type="button" aria-label="Figure précédente">‹</button>
+      <span id="figure-position"></span>
+      <button id="figure-next" type="button" aria-label="Figure suivante">›</button>
+      <a id="figure-open" target="_blank" rel="noopener">Ouvrir l'image</a>
+      <button id="figure-close" type="button" aria-label="Fermer">×</button>
+    </div>
+    <img id="figure-image" alt="">
+    <p id="figure-caption"></p>
+    <p id="figure-credit" class="credit"></p>
+  </dialog>
+
   <script src="vendor/cytoscape-3.33.1.min.js"></script>
   <script src="app.js"></script>
 </body>

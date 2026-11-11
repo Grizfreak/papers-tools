@@ -579,6 +579,53 @@ function related(paper) {
     .slice(0, 5);
 }
 
+// Les figures locales couvrent tous les papiers ; les publiques, les seuls papiers autorisés
+async function loadFigureIndex() {
+  meta.figureBase = data.version === 'full' ? 'figures/' : 'figures-public/';
+  try {
+    const response = await fetch(`${meta.figureBase}index.json`, { cache: 'no-cache' });
+    meta.figures = response.ok ? await response.json() : {};
+  } catch {
+    meta.figures = {};
+  }
+}
+
+const viewer = { items: [], at: 0, folder: '', credit: '' };
+
+function showFigure(at) {
+  const count = viewer.items.length;
+  viewer.at = (at + count) % count;
+  const item = viewer.items[viewer.at];
+  $('figure-image').src = viewer.folder + item.file;
+  $('figure-image').alt = item.label;
+  $('figure-open').href = viewer.folder + item.file;
+  $('figure-position').textContent = `${item.label} · ${viewer.at + 1} / ${count}`;
+  $('figure-caption').textContent = item.caption;
+  $('figure-credit').textContent = viewer.credit;
+  if (!$('lightbox').open) $('lightbox').showModal();
+}
+
+// Remplit la galerie d'un papier une fois ses légendes chargées
+async function fillGallery(paper, box) {
+  const folder = `${meta.figureBase}${paper.id}/`;
+  let record;
+  try {
+    record = await (await fetch(`${folder}captions.json`, { cache: 'no-cache' })).json();
+  } catch {
+    box.replaceChildren(line('meta', 'Figures introuvables.'));
+    return;
+  }
+  const thumbs = record.items.map((item, at) => el('button', {
+    type: 'button',
+    title: item.caption,
+    on: { click: () => {
+      Object.assign(viewer, { items: record.items, folder, credit: record.credit || '' });
+      showFigure(at);
+    } },
+  }, [el('img', { src: folder + item.file, alt: item.label, loading: 'lazy' }), item.label]));
+  box.replaceChildren(el('div', { class: 'gallery' }, thumbs), line('credit', record.credit));
+}
+
 function reference(p) {
   const names = p.authors.length > 6 ? `${p.authors.slice(0, 6).join(', ')} et al.` : p.authors.join(', ');
   return [names, p.year && `(${p.year})`, p.title, p.publication, p.doi].filter(Boolean).join('. ').replace('. (', ' (');
@@ -624,6 +671,12 @@ function paperPanel(p) {
     }));
   }
   parts.push(el('div', { class: 'actions' }, actions));
+
+  if (meta.figures[p.id]) {
+    const box = el('div', {}, [line('meta', 'Chargement…')]);
+    parts.push(el('h3', { text: `Figures et tableaux (${meta.figures[p.id]})` }), box);
+    fillGallery(p, box);
+  }
 
   const close = related(p);
   if (close.length) {
@@ -800,6 +853,7 @@ async function main() {
     return;
   }
   prepare();
+  await loadFigureIndex();
   $('badge').hidden = data.version !== 'full';
 
   cy = cytoscape({
@@ -832,7 +886,17 @@ async function main() {
   document.querySelectorAll('.views button').forEach((button) => {
     button.addEventListener('click', () => setView(button.dataset.view));
   });
+  $('figure-prev').addEventListener('click', () => showFigure(viewer.at - 1));
+  $('figure-next').addEventListener('click', () => showFigure(viewer.at + 1));
+  $('figure-close').addEventListener('click', () => $('lightbox').close());
+  // Un clic sur le fond assombri ferme la figure agrandie
+  $('lightbox').addEventListener('click', (event) => { if (event.target === $('lightbox')) $('lightbox').close(); });
   document.addEventListener('keydown', (event) => {
+    if ($('lightbox').open) {
+      if (event.key === 'ArrowLeft') showFigure(viewer.at - 1);
+      if (event.key === 'ArrowRight') showFigure(viewer.at + 1);
+      return;
+    }
     if (event.key === 'Escape') select(null);
     // Les raccourcis de zoom ne doivent pas gêner la saisie dans un champ
     if (['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)) return;
