@@ -14,6 +14,8 @@ const state = {
   yearMax: 0,
   query: '',
   selected: null,
+  isolated: null,
+  hideOthers: false,
 };
 
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -132,7 +134,8 @@ function seeded(seed, run) {
 }
 
 function layout() {
-  // La disposition épouse les proportions de la zone d'affichage
+  // La disposition épouse les proportions de la zone d'affichage, mesurée à l'instant
+  cy.resize();
   const ratio = Math.min(2, Math.max(0.6, cy.width() / Math.max(1, cy.height())));
   seeded(7, () => {
     cy.elements(':visible').layout({
@@ -148,7 +151,7 @@ function layout() {
       nodeDimensionsIncludeLabels: true,
     }).run();
   });
-  cy.fit(cy.elements(':visible'), 30);
+  cy.fit(cy.elements(':visible'), 50);
 }
 
 // Surligne un nœud et ses voisins ; sans argument, revient à la sélection en cours
@@ -164,6 +167,7 @@ function focus(node) {
 }
 
 function matches(paper) {
+  if (state.isolated && !paper.keywords.includes(state.isolated)) return false;
   if (paper.year && (paper.year < state.yearMin || paper.year > state.yearMax)) return false;
   if (state.keywords.size) {
     const has = (name) => paper.keywords.includes(name);
@@ -188,7 +192,11 @@ function applyFilters() {
     });
     // Un mot-clé disparaît si sa famille est masquée ou s'il n'a plus de papier visible
     cy.nodes('[kind = "keyword"]').forEach((node) => {
-      const alive = state.families.has(node.data('color')) && node.neighborhood('node').not('.hidden').nonempty();
+      const name = node.data('label');
+      const isolated = name === state.isolated;
+      const masked = state.isolated && state.hideOthers && !isolated;
+      const alive = (isolated || state.families.has(node.data('color'))) && !masked
+        && node.neighborhood('node').not('.hidden').nonempty();
       node.toggleClass('hidden', !alive);
     });
   });
@@ -207,6 +215,46 @@ function chip(keyword, onClick) {
 function toggleKeyword(name) {
   state.keywords.has(name) ? state.keywords.delete(name) : state.keywords.add(name);
   applyFilters();
+}
+
+// L'adresse retient le mot-clé isolé et le nœud ouvert, pour partager un lien direct
+function syncUrl() {
+  const params = new URLSearchParams(location.search);
+  state.isolated ? params.set('isoler', state.isolated) : params.delete('isoler');
+  const query = params.toString();
+  const hash = state.selected ? `#${encodeURIComponent(state.selected)}` : '';
+  history.replaceState(null, '', location.pathname + (query ? `?${query}` : '') + hash);
+}
+
+// Isoler : ne garder que les papiers d'un mot-clé, puis redisposer ce qui reste
+function isolate(name) {
+  state.isolated = name;
+  const box = $('isolation');
+  box.hidden = !name;
+  if (name) {
+    const others = el('input', { type: 'checkbox', on: { change: (event) => {
+      state.hideOthers = event.target.checked;
+      applyFilters();
+      layout();
+    } } });
+    others.checked = state.hideOthers;
+    const solid = chip(name, () => select(`k:${name}`));
+    solid.classList.add('solid');
+    box.replaceChildren(
+      'Isolé :', solid,
+      el('label', {}, [others, 'masquer les autres mots-clés']),
+      el('button', { type: 'button', text: 'Quitter', on: { click: () => isolate(null) } }),
+    );
+  }
+  applyFilters();
+  layout();
+  if (state.selected && cy.getElementById(state.selected).hasClass('hidden')) select(null);
+  else if (state.selected) select(state.selected);
+  syncUrl();
+}
+
+function zoomBy(factor) {
+  cy.zoom({ level: cy.zoom() * factor, renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } });
 }
 
 function buildFilters() {
@@ -261,7 +309,10 @@ function buildFilters() {
     }, [el('span', { class: 'swatch' }), family.label]);
     $('legend').append(toggle);
   }
-  $('legend').append(el('span', { class: 'note' }, [el('span', { class: 'dot' }), 'papier, taille = citations (échelle log)']));
+  $('legend').append(
+    el('span', { class: 'note' }, [el('span', { class: 'dot' }), 'papier, taille = citations (échelle log)']),
+    el('span', { class: 'note', text: 'double-clic sur un mot-clé : l\'isoler' }),
+  );
 
   document.querySelectorAll('input[name="mode"]').forEach((radio) => {
     radio.addEventListener('change', () => { state.mode = radio.value; applyFilters(); });
@@ -309,14 +360,14 @@ function keywordPanel(node) {
   const family = data.families.find((f) => f.color === node.data('color'));
   const papers = node.neighborhood('node').not('.hidden').map((n) => n.data('paper'))
     .sort((a, b) => (b.year || 0) - (a.year || 0) || a.label.localeCompare(b.label));
-  const active = state.keywords.has(name);
+  const active = state.isolated === name;
   return [
     el('h2', { text: name }),
     line('meta', `${family ? family.label : ''} · ${papers.length} papier${papers.length > 1 ? 's' : ''} affiché${papers.length > 1 ? 's' : ''}`),
     el('p', {}, [el('button', {
       type: 'button',
-      text: active ? 'Retirer ce filtre' : 'Ne garder que ces papiers',
-      on: { click: () => { toggleKeyword(name); select(node.id()); } },
+      text: active ? 'Quitter l\'isolement' : 'Isoler ce mot-clé',
+      on: { click: () => isolate(active ? null : name) },
     })]),
     el('ul', { class: 'paper-list' }, papers.map((p) => el('li', {}, [
       el('button', { type: 'button', on: { click: () => select(`p:${p.id}`) } }, [p.label, el('small', { text: p.title })]),
@@ -330,21 +381,19 @@ function select(id) {
   if (!node || node.empty()) {
     state.selected = null;
     $('panel').hidden = true;
-    history.replaceState(null, '', location.pathname + location.search);
   } else {
     state.selected = id;
     node.addClass('chosen');
     $('panel-body').replaceChildren(...(node.data('kind') === 'paper' ? paperPanel(node.data('paper')) : keywordPanel(node)));
     $('panel').hidden = false;
     $('panel').scrollTop = 0;
-    // L'adresse garde le nœud ouvert, pour partager un lien direct
-    history.replaceState(null, '', `#${encodeURIComponent(id)}`);
     // Le panneau vient de réduire la zone du graphe : on ramène le nœud dans le champ
     cy.resize();
     const view = cy.extent();
     const at = node.position();
     if (at.x < view.x1 || at.x > view.x2 || at.y < view.y1 || at.y > view.y2) cy.center(node);
   }
+  syncUrl();
   focus();
 }
 
@@ -368,8 +417,7 @@ async function main() {
     elements: elements(),
     style: graphStyle(),
     minZoom: 0.2,
-    maxZoom: 3,
-    wheelSensitivity: 0.3,
+    maxZoom: 4,
   });
   buildFilters();
   applyFilters();
@@ -379,17 +427,35 @@ async function main() {
   cy.on('mouseout', 'node', () => focus());
   cy.on('tap', (event) => select(event.target === cy ? null : event.target.isNode() ? event.target.id() : state.selected));
 
+  cy.on('dbltap', 'node[kind = "keyword"]', (event) => {
+    const name = event.target.data('label');
+    isolate(state.isolated === name ? null : name);
+  });
+
   $('close-panel').addEventListener('click', () => select(null));
   $('relayout').addEventListener('click', layout);
   $('toggle-filters').addEventListener('click', () => setFilters($('filters').classList.contains('closed')));
-  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') select(null); });
+  $('zoom-in').addEventListener('click', () => zoomBy(1.3));
+  $('zoom-out').addEventListener('click', () => zoomBy(1 / 1.3));
+  $('zoom-fit').addEventListener('click', () => cy.fit(cy.elements(':visible'), 30));
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') select(null);
+    // Les raccourcis de zoom ne doivent pas gêner la saisie dans la recherche
+    if (event.target.matches('input')) return;
+    if (event.key === '+' || event.key === '=') zoomBy(1.3);
+    if (event.key === '-') zoomBy(1 / 1.3);
+    if (event.key === '0') cy.fit(cy.elements(':visible'), 30);
+  });
 
   setFilters(!narrow.matches);
   narrow.addEventListener('change', () => setFilters(!narrow.matches));
   dark.addEventListener('change', () => cy.style(graphStyle()));
   new ResizeObserver(() => cy.resize()).observe($('graph'));
 
-  if (location.hash.length > 1) select(decodeURIComponent(location.hash.slice(1)));
+  const start = location.hash.length > 1 ? decodeURIComponent(location.hash.slice(1)) : null;
+  const isolated = new URLSearchParams(location.search).get('isoler');
+  if (start) select(start);
+  if (isolated && cy.getElementById(`k:${isolated}`).nonempty()) isolate(isolated);
 }
 
 main();
