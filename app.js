@@ -292,6 +292,8 @@ function layout() {
   cy.nodes('[kind = "axis"]').remove();
   if (state.view === 'timeline') timelineLayout();
   else forceLayout();
+  // Disposition calculée sur un sous-ensemble : à refaire en quittant l'isolement du papier
+  meta.partial = Boolean(state.isolated && state.isolated.startsWith('p:'));
   cy.fit(shown(), 50);
 }
 
@@ -410,7 +412,7 @@ function renderIsolation() {
     parts.push(el('button', { type: 'button', text: meta.byId.get(id.slice(2)).label, on: { click: () => select(id) } }));
     const level = el('select', { 'aria-label': 'Nombre minimal de mots-clés communs', on: { change: (event) => {
       state.minShared = +event.target.value;
-      refresh(true);
+      refresh();
     } } }, [1, 2, 3, 4, 5, 6].map((n) => el('option', { value: n, text: n })));
     level.value = state.minShared;
     parts.push(el('label', {}, ['papiers partageant au moins', level, 'mots-clés affichés']));
@@ -419,7 +421,7 @@ function renderIsolation() {
   }
   const others = el('input', { type: 'checkbox', on: { change: (event) => {
     state.hideOthers = event.target.checked;
-    refresh(true);
+    refresh(!onPaper);
   } } });
   others.checked = state.hideOthers;
   parts.push(
@@ -431,10 +433,12 @@ function renderIsolation() {
 
 // Isoler : ne garder que le voisinage d'un mot-clé ou d'un papier, puis redisposer
 function isolate(id) {
+  // Autour d'un papier, les nœuds gardent leur place ; un mot-clé isolé est redisposé
+  const moves = [state.isolated, id].some((node) => node && node.startsWith('k:')) || meta.partial;
   state.isolated = id;
   if (!id) state.hideOthers = false;
   renderIsolation();
-  refresh(true);
+  refresh(moves);
   if (state.selected) select(cy.getElementById(state.selected).hasClass('hidden') ? null : state.selected);
   else syncUrl();
 }
