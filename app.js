@@ -893,6 +893,10 @@ async function main() {
     style: graphStyle(),
     minZoom: 0.2,
     maxZoom: 4,
+    // Dans un embed, la molette doit faire défiler la page hôte ; on zoome avec les boutons
+    userZoomingEnabled: !meta.compact,
+    // Dans un petit cadre, on déplace un point sans le vouloir en voulant bouger la vue
+    autoungrabify: meta.compact,
   });
   buildFilters();
 
