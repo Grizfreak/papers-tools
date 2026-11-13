@@ -6,6 +6,8 @@ const dark = window.matchMedia('(prefers-color-scheme: dark)');
 
 // Familles descriptives, portées par presque tous les papiers : masquées à l'ouverture
 const HIDDEN_AT_START = ['gray', 'brown'];
+// Dans un embed, « Question traitée » (orange) surcharge le petit cadre : masquée au départ
+const HIDDEN_IN_EMBED = ['orange'];
 const PERTINENCE = ['Centrale', 'Utile', 'Contexte'];
 const STATUTS = ['Lu', 'En cours', 'À lire'];
 const VIEWS = { graph: null, timeline: 'chronologie', list: 'liste' };
@@ -515,7 +517,8 @@ function buildFilters() {
   for (const family of data.families) {
     const names = data.keywords.filter((k) => k.color === family.color && meta.count.get(k.name));
     if (!names.length) continue;
-    const visible = !HIDDEN_AT_START.includes(family.color);
+    const hidden = HIDDEN_AT_START.concat(meta.compact ? HIDDEN_IN_EMBED : []);
+    const visible = !hidden.includes(family.color);
     if (visible) state.families.add(family.color);
     const chips = names.map((k) => {
       const button = chip(k.name, () => toggleKeyword(k.name));
