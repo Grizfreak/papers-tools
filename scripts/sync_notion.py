@@ -14,7 +14,8 @@ from env import ROOT, require
 
 API = "https://api.notion.com/v1"
 NOTION_VERSION = "2025-09-03"
-DATA_SOURCE_ID = os.environ.get("NOTION_DATA_SOURCE_ID", "feb7e690-40d4-82c8-b9ab-07670ec9a671")
+# Une variable vide (CI sans réglage) retombe sur la base par défaut
+DATA_SOURCE_ID = os.environ.get("NOTION_DATA_SOURCE_ID") or "feb7e690-40d4-82c8-b9ab-07670ec9a671"
 
 # Seul le nom de la famille est fixé ici ; la couleur de chaque mot-clé vient de Notion
 FAMILIES = {
