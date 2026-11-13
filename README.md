@@ -36,6 +36,17 @@ ni commité ni gardé comme artifact, et la sortie de `wrangler` n'apparaît pas
 Secrets GitHub : `NOTION_TOKEN`, `CLOUDFLARE_API_TOKEN` (modèle « Edit Cloudflare Workers »),
 `CLOUDFLARE_ACCOUNT_ID` et `SITE_PATH` (16 caractères au moins parmi `A-Z a-z 0-9 _ -`).
 
+Le site répond à `https://carte-these.<sous-domaine>.workers.dev/<SITE_PATH>/` ; la racine du
+domaine renvoie un 404. `deploy/_headers` interdit l'indexation, n'envoie aucun référent et
+n'autorise l'intégration en iframe que depuis Notion.
+
+Changer le lien (l'ancien cesse de marcher dès la fin du redéploiement) :
+
+```powershell
+scripts
+ew_link.ps1 -Subdomain <sous-domaine>   # puis mettre à jour le bloc /embed de Notion
+```
+
 ## OpenAlex
 
 ```powershell

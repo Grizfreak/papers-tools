@@ -63,6 +63,7 @@ jobs:
           cp index.html app.js style.css "$site/"
           cp -r vendor "$site/"
           cp data/public.json "$site/data/"
+          cp deploy/_headers _site/
           python scripts/check_public.py "$site/data/public.json"
 
       # La sortie de wrangler liste les fichiers envoyés, donc le chemin secret : on la tait

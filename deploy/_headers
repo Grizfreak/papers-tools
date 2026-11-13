@@ -1,0 +1,6 @@
+# Lu par Cloudflare au déploiement, jamais servi ; frame-ancestors : Notion et son relais Iframely
+/*
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff
+  Content-Security-Policy: frame-ancestors 'self' https://www.notion.so https://*.notion.so https://*.notion.site https://iframe.ly https://*.iframe.ly https://*.iframely.net
