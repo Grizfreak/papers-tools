@@ -3,8 +3,6 @@
 Outils autour de ma bibliographie de thèse : un réseau interactif des papiers lus, alimenté
 par une base Notion, et un extracteur de figures.
 
-Version publique : <https://grizfreak.github.io/papers-tools/>
-
 ## Installation
 
 Python 3.13 suffit pour la synchro (aucune dépendance externe).
@@ -21,7 +19,7 @@ python scripts/check_public.py     # échoue si public.json sort de la liste bla
 ```
 
 - `data/public.json` : papiers lus, métadonnées bibliographiques et mots-clés uniquement
-  (liste blanche). Commité.
+  (liste blanche). Jamais commité : seul le workflow le publie, sur Cloudflare.
 - `data/full.json` : tous les papiers (lus ou non) et tous les champs, notes personnelles
   et textes personnels compris (En bref, Mes notes, Pertinence). Jamais commité.
 
@@ -29,10 +27,14 @@ Le script ne fait que lire Notion, avec une intégration limitée à « Read con
 
 ## Mise en ligne
 
-Le workflow `.github/workflows/sync.yml` tourne chaque jour à 5 h UTC, à chaque push et à la
-demande (`gh workflow run sync.yml`). Il régénère `public.json` avec le secret `NOTION_TOKEN`,
-vérifie la liste blanche, commite le fichier s'il a changé, puis déploie sur GitHub Pages les
-seuls fichiers du site.
+Le workflow `.github/workflows/sync.yml` tourne chaque jour à 5 h UTC, à chaque push sur `main`
+et à la demande (`gh workflow run sync.yml`). Il régénère `public.json` avec le secret
+`NOTION_TOKEN`, vérifie la liste blanche, puis déploie les seuls fichiers du site sur Cloudflare
+Workers (`wrangler.jsonc`), sous un dossier secret donné par le secret `SITE_PATH`. Le JSON n'est
+ni commité ni gardé comme artifact, et la sortie de `wrangler` n'apparaît pas dans les logs.
+
+Secrets GitHub : `NOTION_TOKEN`, `CLOUDFLARE_API_TOKEN` (modèle « Edit Cloudflare Workers »),
+`CLOUDFLARE_ACCOUNT_ID` et `SITE_PATH` (16 caractères au moins parmi `A-Z a-z 0-9 _ -`).
 
 ## OpenAlex
 

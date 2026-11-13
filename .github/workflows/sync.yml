@@ -9,61 +9,69 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
-  pages: write
-  id-token: write
+  contents: read
 
 concurrency:
-  group: pages
+  group: deploy
   cancel-in-progress: false
 
 jobs:
   sync-and-deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+    env:
+      NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      SITE_PATH: ${{ secrets.SITE_PATH }}
+      WRANGLER_SEND_METRICS: "false"
     steps:
+      # Un fork sans secrets s'arrête ici avec un message clair
+      - name: Vérifier les secrets
+        run: |
+          missing=""
+          for name in NOTION_TOKEN CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID SITE_PATH; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Secrets manquants :$missing (voir la section Mise en ligne du README)."
+            exit 1
+          fi
+          if ! [[ "$SITE_PATH" =~ ^[A-Za-z0-9_-]{16,}$ ]]; then
+            echo "::error::SITE_PATH doit compter au moins 16 caractères parmi A-Z, a-z, 0-9, _ et -."
+            exit 1
+          fi
+
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
 
       - name: Régénérer public.json depuis Notion
-        env:
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
         run: python scripts/sync_notion.py --public-only
 
       - name: Vérifier la liste blanche
         run: python scripts/check_public.py
 
-      - name: Commiter public.json s'il a changé
-        run: |
-          if git diff --quiet -- data/public.json; then
-            echo "Aucun changement."
-          else
-            git config user.name "Grizfreak"
-            git config user.email "36886471+Grizfreak@users.noreply.github.com"
-            git add data/public.json
-            git commit -m "chore: met à jour public.json depuis Notion"
-            git push
-          fi
-
-      # Seuls les fichiers du site partent en ligne, pas les scripts
+      # Le site vit sous un dossier secret ; la racine du domaine ne sert qu'un 404
       - name: Assembler le site
         run: |
-          mkdir -p _site/data
-          cp index.html app.js style.css _site/
-          cp -r vendor _site/
-          cp data/public.json _site/data/
-          python scripts/check_public.py _site/data/public.json
+          site="_site/$SITE_PATH"
+          mkdir -p "$site/data"
+          cp index.html app.js style.css "$site/"
+          cp -r vendor "$site/"
+          cp data/public.json "$site/data/"
+          python scripts/check_public.py "$site/data/public.json"
 
-      - uses: actions/configure-pages@v6
-
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: _site
-
-      - id: deploy
-        uses: actions/deploy-pages@v5
+      # La sortie de wrangler liste les fichiers envoyés, donc le chemin secret : on la tait
+      - name: Déployer sur Cloudflare
+        run: |
+          if npx --yes wrangler@4.155.0 deploy > wrangler.log 2>&1; then
+            echo "Site déployé."
+          else
+            echo "::error::Échec du déploiement. Dernières lignes, chemin secret masqué :"
+            tail -n 20 wrangler.log | sed "s#$SITE_PATH#<SITE_PATH>#g"
+            exit 1
+          fi

@@ -1,7 +1,8 @@
 # Secrets
 .env
 
-# Données privées : JSON complet (Mes notes, Pertinence) et figures sous licence
+# Données : jamais dans git, même la version publique (déployée par le workflow)
+data/public.json
 data/full.json
 figures/
 figures-public/
@@ -11,3 +12,9 @@ figures-public/
 .venv/
 __pycache__/
 *.pyc
+
+# Déploiement
+_site/
+.wrangler/
+wrangler.log
+node_modules/

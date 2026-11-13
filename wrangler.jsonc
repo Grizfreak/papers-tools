@@ -1,0 +1,11 @@
+{
+  // Site statique seul, sans script Worker ; _site est assemblé par le workflow
+  "name": "carte-these",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "_site",
+    "not_found_handling": "none"
+  },
+  "workers_dev": true,
+  "preview_urls": false
+}
