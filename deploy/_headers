@@ -3,4 +3,4 @@
   X-Robots-Tag: noindex, nofollow
   Referrer-Policy: no-referrer
   X-Content-Type-Options: nosniff
-  Content-Security-Policy: frame-ancestors 'self' https://www.notion.so https://*.notion.so https://*.notion.site https://iframe.ly https://*.iframe.ly https://*.iframely.net
+  Content-Security-Policy: frame-ancestors 'self' https://notion.so https://*.notion.so https://notion.com https://*.notion.com https://notion.site https://*.notion.site https://iframe.ly https://*.iframe.ly https://iframely.net https://*.iframely.net
