@@ -1,5 +1,8 @@
 # papers-tools
 
+**Pour tout installer de zéro** (Zotero, Notero, base Notion, fork, Cloudflare, intégration
+dans Notion) : voir [docs/mise-en-place.md](docs/mise-en-place.md).
+
 Outils autour d'une bibliographie de thèse tenue dans Notion :
 
 - **un réseau interactif des lectures** : graphe papiers / mots-clés, chronologie et tableau,
