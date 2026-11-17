@@ -1,7 +1,8 @@
 # Lance le site local (données complètes) et l'ouvre dans le navigateur.
-# Usage : scripts\serve.ps1 [-NoSync] [-NoBrowser] [-Port 8137]
+# Usage : scripts\serve.ps1 [-NoSync] [-NoFigures] [-NoBrowser] [-Port 8137]
 param(
     [switch]$NoSync,
+    [switch]$NoFigures,
     [switch]$NoBrowser,
     [int]$Port = 8137
 )
@@ -32,6 +33,15 @@ if (-not $NoSync) {
     python scripts/sync_notion.py
     if ($LASTEXITCODE -ne 0) {
         Write-Warning 'Synchro impossible : le site affiche les dernières données connues.'
+    }
+}
+
+if (-not $NoFigures) {
+    # Sans --force, seuls les papiers jamais extraits sont traités : quasi instantané sinon
+    Write-Host 'Figures des nouveaux papiers...'
+    python scripts/extract_figures.py --all
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning 'Extraction des figures impossible : le site garde les figures déjà extraites.'
     }
 }
 
