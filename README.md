@@ -103,14 +103,15 @@ fork sans secrets s'arrête dès la première étape avec la liste des secrets m
 
 ## Le réseau des lectures
 
-- Trois vues : Graphe, Chronologie (une colonne par année) et Liste (tableau triable).
+- Quatre vues : Graphe, Bulles (un disque par mot-clé avec son nombre de papiers ; un clic
+  déplie ses papiers autour), Chronologie (une colonne par année) et Liste (tableau triable).
 - Double-clic sur un mot-clé ou un papier pour l'isoler ; clic pour ouvrir ses détails.
 - Filtres : années, citations, type, mots-clés, recherche ; en local, pertinence et statut.
 - Exporter : la vue en PNG, ou le tableau en CSV depuis la vue Liste.
-- L'adresse retient la vue, la couleur, le nœud isolé et le nœud ouvert.
+- L'adresse retient la vue, la couleur, le nœud isolé, le nœud ouvert et les bulles dépliées.
 - Embarqué dans une autre page (bloc `/embed` de Notion), le site passe en mode compact :
-  en-tête sur une ligne, légende repliée, lien « Plein écran », nœuds figés, molette laissée à
-  la page hôte. `?embed=1` ou `?embed=0` le force ou l'empêche.
+  ouverture sur la vue Bulles, en-tête sur une ligne, légende repliée, lien « Plein écran »,
+  nœuds figés, molette laissée à la page hôte. `?embed=1` ou `?embed=0` le force ou l'empêche.
 
 Cytoscape.js 3.33.1 est copié dans `vendor/`.
 

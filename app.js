@@ -8,7 +8,7 @@ const dark = window.matchMedia('(prefers-color-scheme: dark)');
 const HIDDEN_AT_START = ['gray', 'brown'];
 const PERTINENCE = ['Centrale', 'Utile', 'Contexte'];
 const STATUTS = ['Lu', 'En cours', 'À lire'];
-const VIEWS = { graph: null, timeline: 'chronologie', list: 'liste' };
+const VIEWS = { graph: null, bubbles: 'bulles', timeline: 'chronologie', list: 'liste' };
 const COLORS = { none: null, year: 'annee', type: 'type', pertinence: 'pertinence' };
 
 let cy;
@@ -26,6 +26,8 @@ const state = {
   statuts: new Set(['Lu']),
   query: '',
   selected: null,
+  // Vue Bulles : mots-clés dépliés, dans l'ordre d'ouverture
+  open: [],
   isolated: null,
   hideOthers: false,
   minShared: 2,
@@ -175,6 +177,25 @@ function graphStyle() {
         'text-valign': 'center',
       },
     },
+    // Vue Bulles : un disque par mot-clé, avec son nombre de papiers
+    {
+      selector: 'node.bubble',
+      style: {
+        shape: 'ellipse',
+        width: 'data(bubble)',
+        height: 'data(bubble)',
+        label: 'data(bubbleLabel)',
+        'font-size': 'data(bubbleFont)',
+        'text-wrap': 'wrap',
+        'text-max-width': (node) => node.data('bubble') * 0.86,
+        'text-halign': 'center',
+        'line-height': 1.15,
+        // Même bordure ouverte ou fermée : la taille, donc la disposition, ne change pas
+        'border-width': 4,
+        'border-color': (node) => familyHex(node.data('color')),
+      },
+    },
+    { selector: 'node.bubble.open', style: { 'border-color': css('--ink'), 'border-opacity': 0.55 } },
     {
       selector: 'edge',
       style: {
@@ -250,9 +271,9 @@ function forceLayout() {
 }
 
 // cose tire les mots-clés très liés au centre ; on écarte ensuite les cadres qui se recouvrent
-function separate() {
+function separate(only) {
   const GAP = 6;
-  const nodes = cy.nodes().not('.hidden').toArray();
+  const nodes = (only || cy.nodes()).not('.hidden').toArray();
   for (let pass = 0; pass < 60; pass += 1) {
     let moved = false;
     const boxes = nodes.map((node) => node.boundingBox({ includeLabels: true }));
@@ -278,6 +299,75 @@ function separate() {
     }
     if (!moved) break;
   }
+}
+
+// Bulles : des liens provisoires rapprochent les mots-clés qui partagent beaucoup de papiers
+function bubbleLayout() {
+  const keywords = cy.nodes('[kind = "keyword"]').not('.hidden');
+  const papers = data.papers.filter(matches);
+  const links = [];
+  keywords.forEach((a, i) => keywords.slice(i + 1).forEach((b) => {
+    const both = papers.filter((p) => p.keywords.includes(a.data('label')) && p.keywords.includes(b.data('label'))).length;
+    if (both) links.push({ group: 'edges', data: { id: `co:${a.id()}:${b.id()}`, kind: 'co', source: a.id(), target: b.id(), weight: both } });
+  }));
+  const temp = cy.add(links);
+  const ratio = Math.min(2, Math.max(0.6, cy.width() / Math.max(1, cy.height())));
+  const side = meta.compact ? 700 : 900;
+  seeded(7, () => {
+    keywords.union(temp).layout({
+      name: 'cose',
+      animate: false,
+      boundingBox: { x1: 0, y1: 0, w: side * ratio, h: side },
+      // Départ tiré de la graine, pas des positions de la vue précédente
+      randomize: true,
+      nodeRepulsion: () => 900000,
+      nodeOverlap: 60,
+      idealEdgeLength: (edge) => 240 - 25 * Math.min(6, edge.data('weight')),
+      edgeElasticity: (edge) => 40 * edge.data('weight'),
+      gravity: 0.4,
+      numIter: 2500,
+      nodeDimensionsIncludeLabels: true,
+    }).run();
+  });
+  temp.remove();
+  separate(keywords);
+  meta.bubbleAt = new Map(keywords.map((node) => [node.id(), { ...node.position() }]));
+  arrangeBubbles();
+}
+
+// Range les papiers des bulles ouvertes en tournesol autour d'elles ; les bulles restent en place
+function arrangeBubbles() {
+  cy.batch(() => {
+    for (const [id, at] of meta.bubbleAt || []) cy.getElementById(id).position(at);
+    const rank = new Map();
+    const byCitations = (a, b) => (b.data('paper').citations || 0) - (a.data('paper').citations || 0);
+    cy.nodes('[kind = "paper"]').not('.hidden').sort(byCitations).forEach((node) => {
+      const hubs = state.open.filter((name) => node.data('paper').keywords.includes(name))
+        .map((name) => cy.getElementById(`k:${name}`)).filter((hub) => hub.nonempty() && !hub.hasClass('hidden'));
+      if (!hubs.length) return;
+      // Un papier commun à plusieurs bulles ouvertes se place entre elles
+      const key = hubs.map((hub) => hub.id()).join('|');
+      const k = rank.get(key) || 0;
+      rank.set(key, k + 1);
+      const single = hubs.length === 1;
+      const x = hubs.reduce((sum, hub) => sum + hub.position('x'), 0) / hubs.length;
+      const y = hubs.reduce((sum, hub) => sum + hub.position('y'), 0) / hubs.length;
+      const radius = (single ? hubs[0].data('bubble') / 2 + 30 : 0) + 38 * Math.sqrt(k + (single ? 1 : 0));
+      const angle = k * 2.39996;
+      node.position({ x: x + radius * Math.cos(angle), y: y + radius * Math.sin(angle) });
+    });
+  });
+  separate();
+}
+
+function toggleBubble(name) {
+  state.open = state.open.includes(name) ? state.open.filter((n) => n !== name) : [...state.open, name];
+  applyFilters();
+  arrangeBubbles();
+  renderPaperLegend();
+  fitView();
+  focus();
+  syncUrl();
 }
 
 // Chronologie : une colonne par année, les mots-clés rangés au-dessus par ancienneté moyenne
@@ -331,6 +421,7 @@ function layout() {
   cy.resize();
   cy.nodes('[kind = "axis"]').remove();
   if (state.view === 'timeline') timelineLayout();
+  else if (state.view === 'bubbles') bubbleLayout();
   else forceLayout();
   // Disposition calculée sur un sous-ensemble : à refaire en quittant l'isolement du papier
   meta.partial = Boolean(state.isolated && state.isolated.startsWith('p:'));
@@ -389,13 +480,38 @@ function keywordAlive(node) {
 
 function applyFilters() {
   let count = 0;
+  const bubbles = state.view === 'bubbles';
+  const shownFamily = (name) => state.families.has(meta.color.get(name));
+  // Une bulle ouverte dont la famille vient d'être masquée se referme
+  if (bubbles) state.open = state.open.filter(shownFamily);
+  const inBubble = new Map();
   cy.batch(() => {
     cy.nodes('[kind = "paper"]').forEach((node) => {
-      const ok = matches(node.data('paper'));
-      node.toggleClass('hidden', !ok);
-      if (ok) count += 1;
+      const paper = node.data('paper');
+      const ok = matches(paper);
+      if (ok) {
+        count += 1;
+        for (const name of paper.keywords) inBubble.set(name, (inBubble.get(name) || 0) + 1);
+      }
+      node.toggleClass('hidden', !ok || (bubbles && !paper.keywords.some((name) => state.open.includes(name))));
     });
-    cy.nodes('[kind = "keyword"]').forEach((node) => node.toggleClass('hidden', !keywordAlive(node)));
+    cy.nodes('[kind = "keyword"]').forEach((node) => {
+      const name = node.data('label');
+      if (!bubbles) {
+        node.toggleClass('hidden', !keywordAlive(node));
+        return;
+      }
+      const n = inBubble.get(name) || 0;
+      const size = 56 + 16 * Math.sqrt(n);
+      // Le mot le plus long doit tenir sur une ligne dans le disque (≈ 0,62 em par caractère)
+      const longest = Math.max(...name.split(/\s+/).map((word) => word.length));
+      const font = Math.max(8, Math.min(16, 10 + size / 22, (size * 0.84) / (longest * 0.62)));
+      node.data({ bubble: size, bubbleFont: font, bubbleLabel: `${name}\n${n}` });
+      node.toggleClass('hidden', !n || (!shownFamily(name) && state.isolated !== node.id()));
+      node.toggleClass('open', state.open.includes(name));
+    });
+    // Seuls les liens vers les bulles ouvertes restent visibles
+    cy.edges().forEach((edge) => edge.toggleClass('hidden', bubbles && !state.open.includes(edge.target().data('label'))));
   });
   const eligible = data.papers.filter((p) => state.statuts.has(p.statut)).length;
   $('count').textContent = `${count} / ${plural(eligible, 'papier')}`;
@@ -409,6 +525,7 @@ function refresh(relayout = false) {
   applyFilters();
   if (state.view === 'list') renderList();
   else if (relayout || state.view === 'timeline') layout();
+  else if (state.view === 'bubbles') arrangeBubbles();
   renderPaperLegend();
   focus();
 }
@@ -436,6 +553,7 @@ function syncUrl() {
   state.isolated ? params.set('isoler', state.isolated) : params.delete('isoler');
   VIEWS[state.view] ? params.set('vue', VIEWS[state.view]) : params.delete('vue');
   COLORS[state.colorBy] ? params.set('couleur', COLORS[state.colorBy]) : params.delete('couleur');
+  state.view === 'bubbles' && state.open.length ? params.set('ouvrir', state.open.join(',')) : params.delete('ouvrir');
   const query = params.toString();
   const hash = state.selected ? `#${encodeURIComponent(state.selected)}` : '';
   history.replaceState(null, '', location.pathname + (query ? `?${query}` : '') + hash);
@@ -599,6 +717,7 @@ function renderPaperLegend() {
   }
   parts.push(note(['taille = citations (échelle log)']));
   if ([...state.statuts].some((statut) => statut !== 'Lu')) parts.push(note([el('span', { class: 'dot unread' }), 'pas encore lu']));
+  if (state.view === 'bubbles') parts.push(note(['bulle = nombre de papiers, clic : déplier']));
   parts.push(note(['double-clic : isoler']));
   $('legend-papers').replaceChildren(...parts);
 }
@@ -877,7 +996,8 @@ function setView(view) {
     button.setAttribute('aria-pressed', String(button.dataset.view === view));
   });
   $('list').hidden = view !== 'list';
-  $('relayout').disabled = view !== 'graph';
+  $('relayout').disabled = view !== 'graph' && view !== 'bubbles';
+  cy.nodes('[kind = "keyword"]').toggleClass('bubble', view === 'bubbles');
   refresh(true);
   syncUrl();
 }
@@ -934,7 +1054,9 @@ async function main() {
 
   cy.on('mouseover', 'node', (event) => focus(event.target));
   cy.on('mouseout', 'node', () => focus());
-  cy.on('tap', (event) => select(event.target === cy ? null : event.target.isNode() ? event.target.id() : state.selected));
+  // En vue Bulles, un clic sur une bulle la déplie ou la replie au lieu d'ouvrir le panneau
+  cy.on('tap', 'node.bubble', (event) => toggleBubble(event.target.data('label')));
+  cy.on('tap', (event) => (event.target !== cy && event.target.hasClass('bubble')) || select(event.target === cy ? null : event.target.isNode() ? event.target.id() : state.selected));
   cy.on('dbltap', 'node', (event) => {
     const id = event.target.id();
     const paper = event.target.data('paper');
@@ -996,7 +1118,10 @@ async function main() {
     $('color-by').value = color;
     cy.style(graphStyle());
   }
-  const view = Object.keys(VIEWS).find((key) => VIEWS[key] === params.get('vue')) || 'graph';
+  // Dans un embed, on ouvre sur les bulles : le graphe complet est trop chargé pour un petit cadre
+  const named = params.get('vue') && Object.keys(VIEWS).find((key) => VIEWS[key] === params.get('vue'));
+  const view = named || (meta.compact ? 'bubbles' : 'graph');
+  state.open = (params.get('ouvrir') || '').split(',').filter((name) => meta.count.get(name));
   const start = location.hash.length > 1 ? decodeURIComponent(location.hash.slice(1)) : null;
   // Le panneau s'ouvre avant la première disposition, pour cadrer sur la place restante
   $('panel').hidden = !start;
