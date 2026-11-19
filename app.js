@@ -6,8 +6,6 @@ const dark = window.matchMedia('(prefers-color-scheme: dark)');
 
 // Familles descriptives, portées par presque tous les papiers : masquées à l'ouverture
 const HIDDEN_AT_START = ['gray', 'brown'];
-// Dans un embed, « Question traitée » (orange) surcharge le petit cadre : masquée au départ
-const HIDDEN_IN_EMBED = ['orange'];
 const PERTINENCE = ['Centrale', 'Utile', 'Contexte'];
 const STATUTS = ['Lu', 'En cours', 'À lire'];
 const VIEWS = { graph: null, timeline: 'chronologie', list: 'liste' };
@@ -248,6 +246,38 @@ function forceLayout() {
       nodeDimensionsIncludeLabels: true,
     }).run();
   });
+  separate();
+}
+
+// cose tire les mots-clés très liés au centre ; on écarte ensuite les cadres qui se recouvrent
+function separate() {
+  const GAP = 6;
+  const nodes = cy.nodes().not('.hidden').toArray();
+  for (let pass = 0; pass < 60; pass += 1) {
+    let moved = false;
+    const boxes = nodes.map((node) => node.boundingBox({ includeLabels: true }));
+    for (let i = 0; i < nodes.length; i += 1) {
+      for (let j = i + 1; j < nodes.length; j += 1) {
+        const a = boxes[i];
+        const b = boxes[j];
+        const dx = Math.min(a.x2, b.x2) - Math.max(a.x1, b.x1) + GAP;
+        const dy = Math.min(a.y2, b.y2) - Math.max(a.y1, b.y1) + GAP;
+        if (dx <= 0 || dy <= 0) continue;
+        // On pousse sur l'axe le moins coûteux, chacun de la moitié du recouvrement
+        const pa = nodes[i].position();
+        const pb = nodes[j].position();
+        const shift = (dx < dy ? { x: dx / 2, y: 0 } : { x: 0, y: dy / 2 });
+        const sx = pa.x <= pb.x ? 1 : -1;
+        const sy = pa.y <= pb.y ? 1 : -1;
+        nodes[i].position({ x: pa.x - sx * shift.x, y: pa.y - sy * shift.y });
+        nodes[j].position({ x: pb.x + sx * shift.x, y: pb.y + sy * shift.y });
+        boxes[i] = nodes[i].boundingBox({ includeLabels: true });
+        boxes[j] = nodes[j].boundingBox({ includeLabels: true });
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
 }
 
 // Chronologie : une colonne par année, les mots-clés rangés au-dessus par ancienneté moyenne
@@ -517,8 +547,7 @@ function buildFilters() {
   for (const family of data.families) {
     const names = data.keywords.filter((k) => k.color === family.color && meta.count.get(k.name));
     if (!names.length) continue;
-    const hidden = HIDDEN_AT_START.concat(meta.compact ? HIDDEN_IN_EMBED : []);
-    const visible = !hidden.includes(family.color);
+    const visible = !HIDDEN_AT_START.includes(family.color);
     if (visible) state.families.add(family.color);
     const chips = names.map((k) => {
       const button = chip(k.name, () => toggleKeyword(k.name));

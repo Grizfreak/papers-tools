@@ -110,8 +110,7 @@ fork sans secrets s'arrête dès la première étape avec la liste des secrets m
 - L'adresse retient la vue, la couleur, le nœud isolé et le nœud ouvert.
 - Embarqué dans une autre page (bloc `/embed` de Notion), le site passe en mode compact :
   en-tête sur une ligne, légende repliée, lien « Plein écran », nœuds figés, molette laissée à
-  la page hôte, famille « Question traitée » masquée au départ. `?embed=1` ou `?embed=0` le
-  force ou l'empêche.
+  la page hôte. `?embed=1` ou `?embed=0` le force ou l'empêche.
 
 Cytoscape.js 3.33.1 est copié dans `vendor/`.
 
